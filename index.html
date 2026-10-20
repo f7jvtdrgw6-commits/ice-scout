@@ -1,10 +1,10 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Ice Scout">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Ice Bot">
 <meta name="theme-color" content="#0b0b0d"><meta name="color-scheme" content="dark">
 <meta name="robots" content="noindex,nofollow"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png?v=5">
-<title>Ice Scout</title>
+<title>Ice Bot</title>
 <style>
 :root{--bg:#0b0b0d;--card:#111114;--card2:#16161a;--l1:#ededef;--l2:#8a8a93;--l3:#55555c;--sep:#1f1f23;--fill:#1a1a1e;--bar:rgba(11,11,13,.72);
 --ac:#7c8cff;--green:#3fb950;--orange:#d29922;--red:#f85149;--seg:#26262b;--spring:cubic-bezier(.32,.72,0,1);color-scheme:dark}
@@ -85,7 +85,7 @@ table.t{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:
 .shake{animation:shake .4s}@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
 #lerr{color:var(--red);font-size:11px;height:16px;margin-top:10px}
 </style></head><body>
-<div id="lock"><img src="icon-512.png?v=5" alt=""><h2>Ice Scout</h2><p>Enter passcode to unlock</p>
+<div id="lock"><img src="icon-512.png?v=5" alt=""><h2>Ice Bot</h2><p>Enter passcode to unlock</p>
 <input id="pw" class="field" type="password" autocomplete="current-password" placeholder="Passcode" onkeydown="if(event.key==='Enter')unlock()">
 <button class="btn press" id="ubtn" onclick="unlock()">Unlock</button><div id="lerr"></div></div>
 <header class="nav" id="nav"><div class="navrow"><div id="navL" style="min-width:80px"></div><div class="ttl" id="navT"></div><div style="min-width:80px;display:flex;justify-content:flex-end"><button class="ib press" onclick="refresh()" aria-label="Refresh" id="rbtn"></button></div></div><h1 id="big"></h1></header>
@@ -213,7 +213,7 @@ cust(o){const c=D.customers.find(x=>x.id==o.id);if(!c)return['Customer','<div cl
 alerts(){const ks=['stpeters','ellisville'];const all=ks.flatMap(k=>D.stores[k].alerts.map(a=>[k,a]));
  return['Alerts',`${all.length?`<div class="list">${all.map(([k,a])=>li({ic:'warn',c:/Pool|Mismatch/.test(a)?'var(--red)':'var(--orange)',t:a,s:D.stores[k].name,on:`push({v:'store',k:'${k}'})`})).join('')}</div>`:`<div class="empty">${svg('check')}<div>All clear</div></div>`}
  <div class="cap">Health</div><div class="list">${ks.map(k=>li({ic:'store',c:'#8e8e93',t:D.stores[k].name,s:`Pool ${n(D.stores[k].pool)} · claim ${D.stores[k].days_since_claim}d · redeem ${D.stores[k].days_since_redeem}d ago`})).join('')}</div>
- <div class="cap">Settings</div><div class="list">${li({ic:'clock',c:'#34c759',t:'Data updated',v:D.generated.slice(5,16).replace('T',' ')})}${li({ic:'refresh',c:'#007aff',t:'Refresh now',on:'refresh()'})}${li({ic:'lock',c:'#ff3b30',t:'Lock Ice Scout',on:'lockApp()'})}</div>
+ <div class="cap">Settings</div><div class="list">${li({ic:'clock',c:'#34c759',t:'Data updated',v:D.generated.slice(5,16).replace('T',' ')})}${li({ic:'refresh',c:'#007aff',t:'Refresh now',on:'refresh()'})}${li({ic:'lock',c:'#ff3b30',t:'Lock Ice Bot',on:'lockApp()'})}</div>
  <div class="foot">Data is end-to-end encrypted and decrypted only on this device. Alert rules: pool &lt; 1,000 · shown but 0 claims in 7d · 0 redemptions in 7d · count mismatch &gt; 5%.</div>`]}
 };
 // nav shadow + pull to refresh
