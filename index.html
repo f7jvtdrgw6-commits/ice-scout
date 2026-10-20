@@ -9,7 +9,7 @@
 :root{--bg:#0b0b0d;--card:#111114;--card2:#16161a;--l1:#ededef;--l2:#8a8a93;--l3:#55555c;--sep:#1f1f23;--fill:#1a1a1e;--bar:rgba(11,11,13,.72);
 --ac:#7c8cff;--green:#3fb950;--orange:#d29922;--red:#f85149;--seg:#26262b;--spring:cubic-bezier(.32,.72,0,1);color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
-html,body{height:100%;background:var(--bg);color:var(--l1);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Inter","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+html,body{height:100%;min-height:100dvh;overflow:hidden;background:var(--bg);color:var(--l1);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Inter","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 .num{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .press{transition:transform .18s var(--spring),background .15s,border-color .15s}.press:active{transform:scale(.98)}
@@ -100,13 +100,15 @@ table.t{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:
 .dd.tdy:not(.edge){color:var(--ac);font-weight:600}.dd:disabled{color:var(--l3);opacity:.5}
 .rsum{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--sep);margin-top:10px;padding-top:10px;font-size:13px;font-weight:500}
 .seg button{min-width:0}
+#scroller{position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+.tabs{transform:none!important;will-change:auto}
 </style></head><body>
 <div id="lock"><img src="icon-512.png?v=5" alt=""><h2>Scoop</h2><p>Enter passcode to unlock</p>
 <input id="pw" class="field" type="password" autocomplete="current-password" placeholder="Passcode" onkeydown="if(event.key==='Enter')unlock()">
 <button class="btn press" id="ubtn" onclick="unlock()">Unlock</button><div id="lerr"></div></div>
-<header class="nav" id="nav"><div class="navrow"><div id="navL" style="min-width:80px"></div><div class="ttl" id="navT"></div><div style="min-width:80px;display:flex;justify-content:flex-end"><button class="ib press" onclick="refresh()" aria-label="Refresh" id="rbtn"></button></div></div><h1 id="big"></h1></header>
+<div id="scroller"><header class="nav" id="nav"><div class="navrow"><div id="navL" style="min-width:80px"></div><div class="ttl" id="navT"></div><div style="min-width:80px;display:flex;justify-content:flex-end"><button class="ib press" onclick="refresh()" aria-label="Refresh" id="rbtn"></button></div></div><h1 id="big"></h1></header>
 <div class="ptr" id="ptr"></div>
-<main id="views"></main>
+<main id="views"></main></div>
 <nav class="tabs" id="tabs"></nav><div id="sheet"></div>
 <script>
 const I={ // SF-Symbols-style line icons
@@ -152,8 +154,8 @@ async function refresh(){tap();const b=document.getElementById('rbtn');b.querySe
 function skeleton(){document.getElementById('views').innerHTML=`<div class="view"><div class="sk" style="height:26px;margin-bottom:8px"></div>${[60,90,140].map(h=>`<div class="sk" style="height:${h}px;margin-bottom:10px"></div>`).join('')}</div>`}
 const seg=(key,opts)=>`<div class="seg">${opts.map(([k,l])=>`<button class="${ST[key]==k?'on':''}" onclick="tap();ST.${key}='${k}';render(true)">${l}</button>`).join('')}</div>`;
 const li=(o)=>`<button class="li press ${o.ic?'ico':''}" ${o.on?`onclick="${o.on}"`:''}>${o.ic?`<span class="sq" style="color:${o.c||'var(--l2)'}">${svg(o.ic)}</span>`:''}<span class="grow"><div class="t1">${o.t}</div>${o.s?`<div class="t2">${o.s}</div>`:''}</span>${o.v!=null?`<span class="val num">${o.v}</span>`:''}${o.on?svg('chev'):''}</button>`;
-function go(tab){tap();ST.tab=tab;ST.stack=[];window.scrollTo(0,0);render()}
-function push(v){tap();ST.stack.push(v);window.scrollTo(0,0);render()}
+function go(tab){tap();ST.tab=tab;ST.stack=[];SC().scrollTop=0;render()}
+function push(v){tap();ST.stack.push(v);SC().scrollTop=0;render()}
 function pop(){tap();ST.stack.pop();render()}
 function render(keep){if(!D)return;const top=ST.stack[ST.stack.length-1];let title,html;
  if(top){[title,html]=VIEWS[top.v](top)}else{[title,html]=VIEWS[ST.tab]()}
@@ -273,13 +275,13 @@ alerts(){const ks=['stpeters','ellisville'];const all=ks.flatMap(k=>D.stores[k].
  <div class="foot">Data is end-to-end encrypted and decrypted only on this device. Alert rules: pool &lt; 1,000 · shown but 0 claims in 7d · 0 redemptions in 7d · count mismatch &gt; 5%.</div>`]}
 };
 // nav shadow + pull to refresh
-addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('scrolled',scrollY>30),{passive:true});
+const SC=()=>document.getElementById('scroller');SC().addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('scrolled',SC().scrollTop>30),{passive:true});
 let y0=null;const ptr=document.getElementById('ptr');
-addEventListener('touchstart',e=>{y0=scrollY<=0?e.touches[0].clientY:null},{passive:true});
+addEventListener('touchstart',e=>{y0=SC().scrollTop<=0?e.touches[0].clientY:null},{passive:true});
 addEventListener('touchmove',e=>{if(y0==null)return;const d=Math.min(80,(e.touches[0].clientY-y0)*.5);if(d>0){ptr.style.transition='none';ptr.style.height=d+'px';ptr.innerHTML=svg('refresh');ptr.firstChild.style.transform=`rotate(${d*4}deg)`}},{passive:true});
 addEventListener('touchend',()=>{if(y0==null)return;const h=parseFloat(ptr.style.height)||0;ptr.style.transition='';y0=null;
  if(h>60){ptr.style.height='48px';ptr.firstChild.classList.add('spin');refresh().then(()=>ptr.style.height='0')}else ptr.style.height='0'});
 if(window.PREVIEW_DATA){D=PREVIEW_DATA;const u=new URLSearchParams(location.search);ST.tab=u.get('tab')||'home';if(u.get('q'))ST.q=u.get('q');if(u.get('sheet'))setTimeout(()=>{ST.cr={a:'2026-09-01',b:'2026-09-30'};openSheet()},50);if(u.get('cust'))ST.stack=[{v:'cust',id:D.customers.find(c=>c.name&&c.phone&&c.email).id}];if(u.get('push'))ST.stack=[JSON.parse(u.get('push'))];opened();if(u.get('lock'))document.getElementById('lock').classList.remove('gone')}
 else{const p=localStorage.getItem('ice_pw');if(p){document.getElementById('pw').value=p;unlock()}}
-if('serviceWorker' in navigator&&!window.PREVIEW_DATA)navigator.serviceWorker.register('sw.js');
+if('serviceWorker' in navigator&&!window.PREVIEW_DATA)navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();document.addEventListener('visibilitychange',()=>{if(!document.hidden)r.update()})});let _rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(_rl)return;_rl=true;location.reload()});
 </script></body></html>
