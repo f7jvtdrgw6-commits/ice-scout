@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Scoop">
 <meta name="theme-color" content="#0b0b0d"><meta name="color-scheme" content="dark">
@@ -9,7 +9,7 @@
 :root{--bg:#0b0b0d;--card:#111114;--card2:#16161a;--l1:#ededef;--l2:#8a8a93;--l3:#55555c;--sep:#1f1f23;--fill:#1a1a1e;--bar:rgba(11,11,13,.72);
 --ac:#7c8cff;--green:#3fb950;--orange:#d29922;--red:#f85149;--seg:#26262b;--spring:cubic-bezier(.32,.72,0,1);color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
-html,body{height:100%;min-height:100dvh;overflow:hidden;background:var(--bg);color:var(--l1);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Inter","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+html,body{height:100%;overflow:hidden;position:fixed;inset:0;width:100%;background:var(--bg);color:var(--l1);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Inter","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 .num{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .press{transition:transform .18s var(--spring),background .15s,border-color .15s}.press:active{transform:scale(.98)}
@@ -100,8 +100,9 @@ table.t{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:
 .dd.tdy:not(.edge){color:var(--ac);font-weight:600}.dd:disabled{color:var(--l3);opacity:.5}
 .rsum{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--sep);margin-top:10px;padding-top:10px;font-size:13px;font-weight:500}
 .seg button{min-width:0}
-#scroller{position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+#scroller{position:fixed;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 .tabs{transform:none!important;will-change:auto}
+html{height:var(--vh,100%)}body{background:#0b0b0d}
 </style></head><body>
 <div id="lock"><img src="icon-512.png?v=5" alt=""><h2>Scoop</h2><p>Enter passcode to unlock</p>
 <input id="pw" class="field" type="password" autocomplete="current-password" placeholder="Passcode" onkeydown="if(event.key==='Enter')unlock()">
@@ -147,7 +148,13 @@ const n=v=>v==null?'—':Number(v).toLocaleString(),$=v=>v==null?'—':'$'+Numbe
 async function load(p){const r=await fetch('data.enc.json?t='+Date.now(),{cache:'no-store'});return decrypt(await r.json(),p)}
 async function unlock(){const p=document.getElementById('pw').value,b=document.getElementById('ubtn');b.innerHTML=`<svg class="spin" viewBox="0 0 24 24" width="16">${I.refresh}</svg>`;
  try{D=await load(p);localStorage.setItem('ice_pw',p);opened()}catch(e){tap();b.textContent='Unlock';document.getElementById('lerr').textContent='Incorrect passcode';const f=document.getElementById('pw');f.classList.remove('shake');void f.offsetWidth;f.classList.add('shake');f.value=''}}
-function opened(){document.getElementById('lock').classList.add('gone');render()}
+function opened(){const f=document.getElementById('pw');f&&f.blur();document.activeElement&&document.activeElement.blur&&document.activeElement.blur();document.getElementById('lock').classList.add('gone');setTimeout(()=>{document.getElementById('lock').style.display='none';vpFix()},450);render();vpFix()}
+// iOS standalone viewport guards: undo window offset left by the keyboard; only ever enlarge height
+function vpFix(){if(window.scrollY||window.scrollX)window.scrollTo(0,0);const v=window.visualViewport;
+ const h=Math.max(v?v.height:0,document.documentElement.clientHeight);if(v&&v.height>innerHeight+1)document.documentElement.style.setProperty('--vh',v.height+'px');else document.documentElement.style.removeProperty('--vh')}
+['resize','orientationchange','pageshow','focusout'].forEach(ev=>addEventListener(ev,()=>setTimeout(vpFix,50)));window.visualViewport&&visualViewport.addEventListener('resize',()=>setTimeout(vpFix,50));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(vpFix,50)});
+
 function lockApp(){localStorage.removeItem('ice_pw');location.reload()}
 async function refresh(){tap();const b=document.getElementById('rbtn');b.querySelector('svg')?.classList.add('spin');skeleton();
  try{if(!window.PREVIEW_DATA)D=await load(localStorage.getItem('ice_pw'));}catch(e){}setTimeout(()=>render(),window.PREVIEW_DATA?500:0)}
