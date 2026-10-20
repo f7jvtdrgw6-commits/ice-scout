@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Ice Scout">
+<meta name="theme-color" content="#0b0f17"><meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Ice Scout</title>
+<style>
+:root{--bg:#0b0f17;--card:#141b27;--line:#222c3d;--tx:#e8eef8;--mu:#8592a8;--ac:#5ad1ff;--ok:#4ade80;--bad:#f87171;--warn:#fbbf24}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.35 -apple-system,system-ui,sans-serif;padding:env(safe-area-inset-top) 14px calc(24px + env(safe-area-inset-bottom))}
+h1{font-size:22px;margin:14px 0 2px}.mu{color:var(--mu);font-size:12px}
+.seg{display:flex;background:var(--card);border-radius:10px;padding:3px;margin:10px 0;gap:3px}.seg button{flex:1;border:0;background:none;color:var(--mu);padding:8px 2px;border-radius:8px;font-size:13px;font-weight:600}
+.seg button.on{background:#25324a;color:var(--tx)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}.card h2{font-size:13px;margin:0 0 8px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.k b{display:block;font-size:22px}.k span{font-size:11px;color:var(--mu)}
+.alert{background:#2a1a12;border-color:#5b3415;color:var(--warn);font-size:13px}.alert div{padding:3px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px 3px;text-align:right;border-bottom:1px solid var(--line)}td:first-child,th:first-child{text-align:left}th{color:var(--mu);font-weight:500}
+.bars{display:flex;align-items:flex-end;gap:3px;height:80px}.bars div{flex:1;background:var(--ac);border-radius:3px 3px 0 0;min-height:2px;position:relative}.bars div.r{background:var(--ok)}
+.dim{opacity:.45}#lock{max-width:320px;margin:30vh auto 0;text-align:center}input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--tx);font-size:16px;margin:10px 0}
+#lock button{width:100%;padding:12px;border:0;border-radius:10px;background:var(--ac);font-weight:700;font-size:16px}
+</style></head><body>
+<div id="lock"><h1>🍧 Ice Scout</h1><div class="mu">Enter passcode</div><input id="pw" type="password" autocomplete="current-password"><button onclick="unlock()">Unlock</button><div id="err" class="mu"></div></div>
+<div id="app" hidden></div>
+<script>
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function decrypt(enc,pass){const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+ const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(enc.salt),iterations:enc.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+ return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(enc.iv)},key,b64(enc.ct))))}
+let D,S='all',W='30d';
+async function unlock(p){p=p||document.getElementById('pw').value;try{const enc=await (await fetch('data.enc.json?t='+Date.now(),{cache:'no-store'})).json();
+ D=await decrypt(enc,p);localStorage.setItem('ice_pw',p);start()}catch(e){document.getElementById('err').textContent='Wrong passcode or no data';localStorage.removeItem('ice_pw')}}
+function start(){document.getElementById('lock').hidden=true;document.getElementById('app').hidden=false;render()}
+const pct=(a,b)=>b?(100*a/b).toFixed(1)+'%':'–',money=v=>v==null?'–':'$'+Number(v).toLocaleString(undefined,{maximumFractionDigits:2}),n=v=>v==null?'–':Number(v).toLocaleString();
+function seg(id,opts,cur){return `<div class="seg">${opts.map(([k,l])=>`<button class="${k==cur?'on':''}" onclick="${id}='${k}';render()">${l}</button>`).join('')}</div>`}
+function render(){const s=D.stores[S],f=s.funnel[W],c=s.customers[W],e=s.econ,mx=Math.max(1,...s.weeks.map(w=>w.shown));
+document.getElementById('app').innerHTML=`<h1>🍧 Ice Scout</h1><div class="mu">Data as of ${D.generated.replace('T',' ')} CT · aggregates only</div>
+${seg('S',[['all','Both'],['stpeters','St. Peters'],['ellisville','Ellisville']],S)}
+${s.alerts.length?`<div class="card alert"><h2>⚠️ Alerts</h2>${s.alerts.map(a=>`<div>• ${a}</div>`).join('')}</div>`:''}
+${seg('W',[['today','Today'],['7d','7d'],['30d','30d'],['ytd','YTD'],['all','All']],W)}
+<div class="card"><h2>Funnel</h2><div class="grid">
+<div class="k"><b>${n(f.shown)}</b><span>Shown</span></div><div class="k"><b>${n(f.claimed)}</b><span>Claimed · ${pct(f.claimed,f.shown)}</span></div>
+<div class="k"><b>${n(f.redeemed)}</b><span>Redeemed · ${pct(f.redeemed,f.claimed)} of claimed</span></div></div></div>
+<div class="card"><h2>Redeemers (Square)</h2><div class="grid">
+<div class="k"><b>${n(c.new)}</b><span>New</span></div><div class="k"><b>${n(c.returning)}</b><span>Returning</span></div><div class="k"><b>${money(c.revenue)}</b><span>Revenue · AOV ${money(c.aov)}</span></div></div></div>
+<div class="card"><h2>Ad economics (YTD)</h2><div class="grid">
+<div class="k"><b>${money(e.spend_ytd_typed)}</b><span>Spend (typed-in YTD)</span></div><div class="k"><b>${money(e.cpa_ytd)}</b><span>CPA · new ${money(e.cpa_new_ytd)}</span></div>
+<div class="k"><b>${e.roas_ytd??'–'}x</b><span>ROAS</span></div></div></div>
+<div class="card"><h2>Health</h2><div class="grid">
+<div class="k"><b>${n(s.pool)}</b><span>Codes left</span></div><div class="k"><b>${s.days_since_claim??'–'}d</b><span>Since last claim</span></div><div class="k"><b>${s.days_since_redeem??'–'}d</b><span>Since last redeem</span></div></div></div>
+<div class="card"><h2>Weekly (12 wk) · shown / redeemed</h2><div class="bars">${s.weeks.map(w=>`<div style="height:${80*w.shown/mx}%" title="${w.week}"></div>`).join('')}</div>
+<table><tr><th>Week</th><th>Shown</th><th>Claimed</th><th>Redeemed</th></tr>${s.weeks.slice(-6).reverse().map(w=>`<tr><td>${w.week.slice(5)}</td><td>${n(w.shown)}</td><td>${n(w.claimed)}</td><td>${n(w.redeemed)}</td></tr>`).join('')}</table></div>
+${s.splits.length?`<div class="card"><h2>Split tests (all time, min ${D.min_sample} shown)</h2><table><tr><th>Label</th><th>Shown</th><th>Claim%</th><th>Redeem/shown</th></tr>
+${s.splits.map(x=>`<tr class="${x.ok?'':'dim'}"><td>${x.label}</td><td>${n(x.shown)}</td><td>${pct(x.claimed,x.shown)}</td><td>${pct(x.redeemed,x.shown)}</td></tr>`).join('')}</table></div>`:''}
+<div class="mu" style="text-align:center;margin-top:16px" onclick="localStorage.removeItem('ice_pw');location.reload()">Lock</div>`}
+if(window.PREVIEW_DATA){D=PREVIEW_DATA;start()}else{const p=localStorage.getItem('ice_pw');if(p)unlock(p)}
+if('serviceWorker' in navigator&&!window.PREVIEW_DATA)navigator.serviceWorker.register('sw.js');
+</script></body></html>
