@@ -68,7 +68,7 @@ table.t{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:
 .search svg{width:13px;height:13px;flex:none}.search input{flex:1;border:0;background:none;font:inherit;font-size:16px;transform:scale(.8125);transform-origin:left;width:123%;color:var(--l1);outline:none}
 .empty{text-align:center;color:var(--l3);padding:40px 24px;font-size:12px}.empty svg{width:28px;height:28px;margin-bottom:8px}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;padding:5px 4px calc(env(safe-area-inset-bottom) + 2px);background:var(--bar);-webkit-backdrop-filter:saturate(160%) blur(18px);backdrop-filter:saturate(160%) blur(18px);border-top:1px solid var(--sep)}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:9.5px;font-weight:500;color:var(--l3);position:relative;padding:2px 0}
+.tab{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:9.5px;font-weight:500;color:var(--l3);position:relative;padding:2px 0}
 .tab svg{width:19px;height:19px;transition:transform .2s var(--spring)}.tab.on{color:var(--l1)}.tab:active svg{transform:scale(.88)}
 .badge{position:absolute;top:-1px;left:calc(50% + 5px);min-width:14px;height:14px;border-radius:7px;background:var(--red);color:#fff;font-size:9px;font-weight:700;display:grid;place-items:center;padding:0 4px}
 .ptr{height:0;overflow:hidden;display:grid;place-items:center;color:var(--l3);transition:height .3s var(--spring)}.ptr svg{width:16px;height:16px}
@@ -107,6 +107,9 @@ lock:'<rect x="5" y="11" width="14" height="9.5" rx="2" fill="none" stroke="curr
 clock:'<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
 store:'<path d="M4 9.5h16M5 9.5V20h14V9.5M3.5 9.5 5.5 4h13l2 5.5M10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
 check:'<path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+people:'<circle cx="9" cy="8.5" r="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.8 14.8c2 .7 3.3 2.4 3.7 5.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+phone:'<path d="M5 3.5h3.5l1.5 4.5-2.2 1.5a11 11 0 0 0 6.7 6.7l1.5-2.2 4.5 1.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.1 1.5 1.5 0 0 1 5 3.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+mail:'<rect x="3" y="5.5" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
 tag:'<path d="M3.5 12.5V4h8.5l8.5 8.5-8.5 8.5zM8 8.5v.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>'};
 const svg=(k,vb='0 0 24 24')=>`<svg ${k==='chev'?'class="chev"':''} viewBox="${k==='chev'?'0 0 8 13':k==='back'?'0 0 13 21':vb}">${I[k]}</svg>`;
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -114,8 +117,10 @@ async function decrypt(e,p){const km=await crypto.subtle.importKey('raw',new Tex
  const k=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(e.salt),iterations:e.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(e.iv)},k,b64(e.ct))))}
 const tap=()=>{try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}};
-let D=null,ST={tab:'home',store:'all',per:'30d',stack:[],q:'',fs:'all'};
-const TABS=[['home','Overview','home'],['funnel','Funnel','funnel'],['tests','Split Tests','tests'],['search','Search','search'],['alerts','Alerts','bell']];
+let D=null,ST={tab:'home',store:'all',per:'30d',stack:[],q:'',fs:'all',cq:'',cs:'all',cst:'all',sort:'recent',lim:60};
+const TABS=[['home','Overview','home'],['funnel','Funnel','funnel'],['tests','Tests','tests'],['customers','Customers','people'],['search','Codes','search'],['alerts','Alerts','bell']];
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fphone=p=>{p=String(p||'').replace(/\D/g,'');if(p.length==11&&p[0]=='1')p=p.slice(1);return p.length==10?`(${p.slice(0,3)}) ${p.slice(3,6)}-${p.slice(6)}`:p};
 const STORES=[['all','Both'],['stpeters','SNOCRAVE'],['ellisville','SNOFIX']],PERS=[['today','Today'],['7d','7D'],['30d','30D'],['ytd','YTD'],['all','All']];
 const PL={today:'today','7d':'last 7 days','30d':'last 30 days',ytd:'year to date',all:'all time'};
 const n=v=>v==null?'—':Number(v).toLocaleString(),$=v=>v==null?'—':'$'+Number(v).toLocaleString(undefined,{minimumFractionDigits:v>=1000?0:2,maximumFractionDigits:v>=1000?0:2}),
@@ -177,16 +182,34 @@ split(o){const x=D.stores[o.k].splits.find(s=>s.label==o.l);
  return[x.label,`<div class="card"><div class="sub">${D.stores[o.k].name} · redeemed of shown</div><div class="hero num">${pct(x.redeemed,x.shown)}</div><div class="hl">${x.ok?'<span class="pill g">Sample OK</span>':`<span class="pill o">Below ${D.min_sample} shown</span>`}</div></div>
  <div class="list">${li({t:'Shown',v:n(x.shown)})}${li({t:'Claimed',v:`${n(x.claimed)} · ${pct(x.claimed,x.shown)}`})}${li({t:'Redeemed',v:`${n(x.redeemed)} · ${pct(x.redeemed,x.claimed)}`})}</div>`]},
 search(){const q=ST.q.trim().toUpperCase();let r=[];
- if(q.length>=2)r=D.codes.filter(c=>(ST.fs=='all'||c[1]==ST.fs)&&c[0].includes(q)).slice(0,50);
+ if(q.length>=2)r=D.codes.filter(c=>(ST.fs=='all'||c[1]==ST.fs)&&(c[0].includes(q)||(c[8]||'').toUpperCase().includes(q)||(c[9]||'').toUpperCase().includes(q))).slice(0,50);
  const st=c=>c[4]?['Redeemed','var(--green)']:['Claimed','#5ac8fa'];
- return['Search',`<div class="search">${svg('search')}<input id="q" placeholder="Code, e.g. 22DC" value="${ST.q}" autocapitalize="characters" autocomplete="off" oninput="ST.q=this.value;render(true)"></div>
+ return['Search',`<div class="search">${svg('search')}<input id="q" placeholder="Code, name or customer ID" value="${ST.q}" autocapitalize="characters" autocomplete="off" oninput="ST.q=this.value;render(true)"></div>
  <div class="chips">${STORES.map(([k,l])=>`<button class="chip press ${ST.fs==k?'on':''}" onclick="tap();ST.fs='${k}';render(true)">${l}</button>`).join('')}</div>
- ${q.length<2?`<div class="empty">${svg('search')}<div>Search ${n(D.codes.length)} claimed &amp; redeemed codes</div></div>`:r.length?`<div class="list">${r.map(c=>{const[s,col]=st(c);return li({ic:c[4]?'check':'tag',c:col,t:c[0],s:`${s} · ${D.stores[c[1]].name}`,on:`push({v:'code',c:'${c[0]}'})`})}).join('')}</div>`:`<div class="empty">No matching codes</div>`}
- <div class="foot">Search covers codes only; no customer names or contact details are stored in the app.</div>`]},
+ ${q.length<2?`<div class="empty">${svg('search')}<div>Search ${n(D.codes.length)} claimed &amp; redeemed codes</div></div>`:r.length?`<div class="list">${r.map(c=>{const[s,col]=st(c);return li({ic:c[4]?'check':'tag',c:col,t:c[0]+(c[8]?' · '+esc(c[8]):''),s:`${s} · ${D.stores[c[1]].name}`,on:`push({v:'code',c:'${c[0]}'})`})}).join('')}</div>`:`<div class="empty">No matching codes</div>`}
+ <div class="foot">Matches code, customer name or Square customer ID.</div>`]},
 code(o){const c=D.codes.find(x=>x[0]==o.c);
  return[c[0],`<div class="card"><div class="sub">${D.stores[c[1]].name}</div><div class="hero" style="font-size:34px">${c[4]?'Redeemed':'Claimed'}</div><div class="hl">${c[5]||'No split label'}</div></div>
  <div class="list">${li({ic:'clock',c:'#8e8e93',t:'Shown',v:ts(c[2])})}${li({ic:'clock',c:'#5ac8fa',t:'Claimed',v:ts(c[3])})}${li({ic:'check',c:'var(--green)',t:'Redeemed',v:ts(c[4])})}</div>
- ${c[4]?`<div class="list">${li({t:'Order total',v:$(c[6])})}${li({t:'Customer type',v:c[7]||'—'})}</div>`:''}`]},
+ ${c[4]?`<div class="list">${li({t:'Order total',v:$(c[6])})}${li({t:'Customer type',v:c[7]||'—'})}${c[9]?li({ic:'people',t:esc(c[8]||'Unnamed customer'),s:'View customer',on:`push({v:'cust',id:'${esc(c[9])}'})`}):''}</div>`:''}`]},
+customers(){const q=ST.cq.trim().toLowerCase(),qd=q.replace(/\D/g,'');
+ let r=D.customers.filter(c=>(ST.cs=='all'||c.store==ST.cs)&&(ST.cst=='all'||c.status.toLowerCase()==ST.cst)&&(!q||c.name.toLowerCase().includes(q)||c.code.toLowerCase().includes(q)||c.id.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)||(qd.length>=3&&c.phone.includes(qd))));
+ r.sort(ST.sort=='total'?(a,b)=>b.total-a.total:ST.sort=='name'?(a,b)=>(a.name||'~').localeCompare(b.name||'~'):(a,b)=>b.last.localeCompare(a.last));
+ const tot=r.reduce((a,c)=>a+c.total,0),ch=(key,opts)=>`<div class="chips">${opts.map(([k,l])=>`<button class="chip press ${ST[key]==k?'on':''}" onclick="tap();ST.${key}='${k}';ST.lim=60;render(true)">${l}</button>`).join('')}</div>`;
+ return['Customers',`<div class="search">${svg('search')}<input id="cq" placeholder="Name, code, phone, email, ID" value="${esc(ST.cq)}" autocomplete="off" oninput="ST.cq=this.value;ST.lim=60;render(true);const e=document.getElementById('cq');e.focus();e.setSelectionRange(99,99)"></div>
+ ${ch('cs',STORES)}<div style="display:flex;gap:6px;justify-content:space-between">${ch('cst',[['all','All'],['new','New'],['returning','Returning']])}</div>${ch('sort',[['recent','Recent'],['total','Top spend'],['name','Name A–Z']])}
+ <div class="tiles c2" style="grid-template-columns:repeat(3,1fr)">${tile('Clients',n(r.length))}${tile('Total spent',$(tot))}${tile('Repeat',n(r.filter(c=>c.count>1).length),'2+ visits')}</div>
+ <div class="list">${r.slice(0,ST.lim).map(c=>`<button class="li press" onclick="push({v:'cust',id:'${esc(c.id)}'})"><span class="grow"><div class="t1">${c.name?esc(c.name):'<span style="color:var(--l2)">'+(c.phone?fphone(c.phone):'Unnamed')+'</span>'}</div>
+ <div class="t2" style="display:flex;gap:4px;margin-top:3px;align-items:center"><span class="d eq">${esc(c.code)}</span><span class="d eq">${c.store=='stpeters'?'SNOCRAVE':'SNOFIX'}</span><span class="d ${c.status=='New'?'up':'eq'}">${esc(c.status)}</span>${c.count>1?`<span class="d up">${c.count} visits</span>`:''}</div></span>
+ <span style="text-align:right"><div class="val">${$(c.total)}</div><div class="t2">${c.last.slice(0,10)}</div></span>${svg('chev')}</button>`).join('')||'<div class="empty">No customers</div>'}</div>
+ ${r.length>ST.lim?`<button class="chip press" style="width:100%;height:32px;margin-bottom:10px" onclick="ST.lim+=100;render(true)">Show more (${n(r.length-ST.lim)} left)</button>`:''}`]},
+cust(o){const c=D.customers.find(x=>x.id==o.id);if(!c)return['Customer','<div class="empty">Not found</div>'];
+ return[c.name?esc(c.name):'Customer',`<div class="card"><div class="sub">${D.stores[c.store].name} · ${c.store=='stpeters'?'SNOCRAVE':'SNOFIX'}</div><div class="hero">${$(c.total)}</div><div class="hl"><span class="d ${c.status=='New'?'up':'eq'}">${esc(c.status)}</span><span>${c.count} visit${c.count==1?'':'s'} · code ${esc(c.code)}</span></div></div>
+ <div class="cap">Contact</div><div class="list">
+ ${c.phone?`<a class="li press" style="color:inherit;text-decoration:none" href="tel:+${c.phone.length==10?'1'+c.phone:c.phone}"><span class="sq" style="color:var(--green)">${svg('phone')}</span><span class="grow"><div class="t1">${fphone(c.phone)}</div><div class="t2">Phone · tap to call</div></span></a>`:li({ic:'phone',t:'—',s:'Phone'})}
+ ${c.email?`<a class="li press" style="color:inherit;text-decoration:none" href="mailto:${esc(c.email)}"><span class="sq" style="color:var(--ac)">${svg('mail')}</span><span class="grow"><div class="t1">${esc(c.email)}</div><div class="t2">Email · tap to write</div></span></a>`:li({ic:'mail',t:'—',s:'Email'})}</div>
+ <div class="cap">Details</div><div class="list">${li({t:'Name',v:esc(c.name)||'—'})}${li({t:'Customer ID',v:`<span style="font-size:10.5px">${esc(c.id)}</span>`})}${li({t:'Code used',v:esc(c.code)})}${li({t:'Status',v:esc(c.status)})}${li({t:'Store',v:D.stores[c.store].name})}${li({t:'Visits',v:c.count})}${li({t:'Total spent',v:$(c.total)})}</div>
+ <div class="cap">Visits</div><div class="list"><table class="t"><tr><th>#</th><th>Date</th><th>Amount</th></tr>${c.visits.map((v,i)=>`<tr><td class="mu">Visit ${i+1}</td><td>${v[0]||'—'}</td><td>${$(v[1])}</td></tr>`).join('')}</table></div>`]},
 alerts(){const ks=['stpeters','ellisville'];const all=ks.flatMap(k=>D.stores[k].alerts.map(a=>[k,a]));
  return['Alerts',`${all.length?`<div class="list">${all.map(([k,a])=>li({ic:'warn',c:/Pool|Mismatch/.test(a)?'var(--red)':'var(--orange)',t:a,s:D.stores[k].name,on:`push({v:'store',k:'${k}'})`})).join('')}</div>`:`<div class="empty">${svg('check')}<div>All clear</div></div>`}
  <div class="cap">Health</div><div class="list">${ks.map(k=>li({ic:'store',c:'#8e8e93',t:D.stores[k].name,s:`Pool ${n(D.stores[k].pool)} · claim ${D.stores[k].days_since_claim}d · redeem ${D.stores[k].days_since_redeem}d ago`})).join('')}</div>
@@ -200,7 +223,7 @@ addEventListener('touchstart',e=>{y0=scrollY<=0?e.touches[0].clientY:null},{pass
 addEventListener('touchmove',e=>{if(y0==null)return;const d=Math.min(80,(e.touches[0].clientY-y0)*.5);if(d>0){ptr.style.transition='none';ptr.style.height=d+'px';ptr.innerHTML=svg('refresh');ptr.firstChild.style.transform=`rotate(${d*4}deg)`}},{passive:true});
 addEventListener('touchend',()=>{if(y0==null)return;const h=parseFloat(ptr.style.height)||0;ptr.style.transition='';y0=null;
  if(h>60){ptr.style.height='48px';ptr.firstChild.classList.add('spin');refresh().then(()=>ptr.style.height='0')}else ptr.style.height='0'});
-if(window.PREVIEW_DATA){D=PREVIEW_DATA;const u=new URLSearchParams(location.search);ST.tab=u.get('tab')||'home';if(u.get('q'))ST.q=u.get('q');if(u.get('push'))ST.stack=[JSON.parse(u.get('push'))];opened();if(u.get('lock'))document.getElementById('lock').classList.remove('gone')}
+if(window.PREVIEW_DATA){D=PREVIEW_DATA;const u=new URLSearchParams(location.search);ST.tab=u.get('tab')||'home';if(u.get('q'))ST.q=u.get('q');if(u.get('cust'))ST.stack=[{v:'cust',id:D.customers.find(c=>c.name&&c.phone&&c.email).id}];if(u.get('push'))ST.stack=[JSON.parse(u.get('push'))];opened();if(u.get('lock'))document.getElementById('lock').classList.remove('gone')}
 else{const p=localStorage.getItem('ice_pw');if(p){document.getElementById('pw').value=p;unlock()}}
 if('serviceWorker' in navigator&&!window.PREVIEW_DATA)navigator.serviceWorker.register('sw.js');
 </script></body></html>
